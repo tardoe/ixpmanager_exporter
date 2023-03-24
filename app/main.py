@@ -74,7 +74,10 @@ def _get_ixp_manager_interfaces(target):
                 + str(interface["asnum"])
                 + '",target="'
                 + target
-                + '",interface="'
+                # interface_name is used by openconfig, 
+                # we need this to match here so we can join this to 
+                # IXP-M data with the openconfig data in Prom.
+                + '",interface_name="' 
                 + interface["name"]
                 + '",bundle="'
                 + bundle
@@ -92,8 +95,10 @@ def _get_ixp_manager_interfaces(target):
 
             for vlan in interface["vlans"]:
                 infra_vlan = vlan["number"]
-                sub_interface = interface["name"] + "." + str(vlan["customVlanTag"])
                 subinterface_index = str(vlan["customVlanTag"])
+                parent_interface = interface["name"].split(".")[0] # incase the dot-syntax is included in IXP-M
+                svc_interface = parent_interface + "." + subinterface_index
+
 
                 prom_output = (
                     prom_output
@@ -106,15 +111,19 @@ def _get_ixp_manager_interfaces(target):
                     + str(interface["asnum"])
                     + '",target="'
                     + target
-                    + '",interface="'
-                    + interface["name"]
-                    + '",subinterface="'
-                    + sub_interface
+                    # interface_name in openconfig_subinterfaces is the physical / LAG interface name
+                    # E.g. Ethernet1/2 or PortChannel40
+                    + '",interface_name="'
+                    + parent_interface
+                    # we need the interface subindex so we can match it onto openconfig_subinterfaces
                     + '",subinterface_index="'
                     + str(subinterface_index)
+                    # useful label to have
+                    + '",svc_interface="'
+                    + svc_interface
                     + '",bundle="'
                     + bundle
-                    + '",infra_vlan="'
+                    + '",peering_vlan="'
                     + str(infra_vlan)
                     + '"} 1\n'
                 )
