@@ -1,5 +1,5 @@
-FROM python:3.6.1-alpine
-WORKDIR /ixpmanager_exporter
-ADD . /ixpmanager_exporter
-RUN pip install -r requirements.txt
-CMD ["python","ixpmanager_exporter.py"]
+FROM tiangolo/uwsgi-nginx-flask:python3.8
+COPY ./app /app
+RUN pip install -r /app/requirements.txt
+ENV LISTEN_PORT 9804
+EXPOSE 9804
