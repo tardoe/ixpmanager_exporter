@@ -59,7 +59,7 @@ def _get_ixp_manager_interfaces(target):
         if "." not in interface["name"]:
             # no sub-interfaces here
             if lags.get(interface["name"]):
-                bundle_parent = '",bundle_parent="' + lags.get(interface["name"]) + '"'
+                bundle_parent = ',bundle_parent="' + lags.get(interface["name"]) + '"'
             else:
                 bundle_parent = ''
 
@@ -82,7 +82,7 @@ def _get_ixp_manager_interfaces(target):
                 + '",bundle="'
                 + bundle
                 + '",member="'
-                + member
+                + member + '"' 
                 + bundle_parent #optional based on bundle
                 + '} 1\n'
             )
