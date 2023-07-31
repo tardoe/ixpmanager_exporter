@@ -18,14 +18,14 @@ IXP_MANAGER_HOST = os.environ.get("IXP_MANAGER_HOST")
 IXP_MANAGER_API_KEY = os.environ.get("IXP_MANAGER_API_KEY")
 EXPORTER_METRIC = "ixpmanager_customer"
 
-EXPORTER_PORTS_METRIC = "ixpmanager_ports"
-EXPORTER_SVCS_METRIC = "ixpmanager_svcs_peering"
+EXPORTER_PORTS_METRIC = "ixpmanager_port"
+EXPORTER_SVCS_METRIC = "ixpmanager_svc"
 
 
-def _get_ixp_manager_interfaces(target):
+def _get_ixp_manager_interfaces(device):
     url = urllib.parse.urljoin(
         "https://" + IXP_MANAGER_HOST,
-        "/api/v4/provisioner/layer2interfaces/switch-name/" + target + ".json",
+        "/api/v4/provisioner/layer2interfaces/switch-name/" + device + ".json",
     )
     r = requests.get(url, headers={"X-IXP-Manager-API-Key": IXP_MANAGER_API_KEY})
 
@@ -72,8 +72,8 @@ def _get_ixp_manager_interfaces(target):
                 + interface["description"]
                 + '",asn="'
                 + str(interface["asnum"])
-                + '",target="'
-                + target
+                + '",device="'
+                + device
                 # interface_name is used by openconfig, 
                 # we need this to match here so we can join this to 
                 # IXP-M data with the openconfig data in Prom.
@@ -97,8 +97,10 @@ def _get_ixp_manager_interfaces(target):
                 infra_vlan = vlan["number"]
                 subinterface_index = str(vlan["customVlanTag"])
                 parent_interface = interface["name"].split(".")[0] # incase the dot-syntax is included in IXP-M
-                svc_interface = parent_interface + "." + subinterface_index
 
+                interface_name = parent_interface
+                if subinterface_index != "0":
+                    interface_name = parent_interface + "." + subinterface_index
 
                 prom_output = (
                     prom_output
@@ -109,22 +111,16 @@ def _get_ixp_manager_interfaces(target):
                     + interface["description"]
                     + '",asn="'
                     + str(interface["asnum"])
-                    + '",target="'
-                    + target
-                    # interface_name in openconfig_subinterfaces is the physical / LAG interface name
-                    # E.g. Ethernet1/2 or PortChannel40
+                    + '",device="'
+                    + device
                     + '",interface_name="'
+                    + interface_name
+                    + '",parent_interface="'
                     + parent_interface
-                    # we need the interface subindex so we can match it onto openconfig_subinterfaces
-                    + '",subinterface_index="'
-                    + str(subinterface_index)
-                    # useful label to have
-                    + '",svc_interface="'
-                    + svc_interface
-                    + '",bundle="'
-                    + bundle
                     + '",peering_vlan="'
                     + str(infra_vlan)
+                    + '",type="'
+                    + "peering"
                     + '"} 1\n'
                 )
 
